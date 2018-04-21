@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ Displaying The Users }}</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+          integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+          crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.css">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.css">
+  </head>
+  <body>
+       <div id="updateModal" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog ">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+          <h4 class="modal-title">Update User</h4>
+        </div>
+        <div class="modal-body form ">
+          <form action="#" class="horizontal-form" style="padding: 4px;">
+            <div class="form-body">
+              <div class="row">
+                <!--/span-->
+                <div class="col-md-12">
+                  <div class="form-group form-md-line-input ">
+                    <input id="updatefirstName" name="firstName" type="text" class="form-control input-sm">
+                    <label class="control-label">First Name</label>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group form-md-line-input ">
+                    <input id="updatelastName"  name="lastName" type="text" class="form-control input-sm" >
+                    <label class="control-label">Last Name</label>
+                  </div>
+                </div>
+                <!--/span-->
+              </div>
+            </div>
+          </form>
+        </div>
+     <div class="modal-footer">
+          <button class="btn btn-primary" type="submit" id="updateUser"  name="updateNotification" >Update Users</button>
+          <button class="btn btn-primary"  data-dismiss="modal" style="margin-right: 10px;" type="submit" >Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  <br>
+  <div id="row">
+
+    <table class="table table-bordered table-striped" id="registerTable">
+      <thead>
+      <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Username</th>
+        <th>Age</th>
+        <th>Salary</th>
+        <th>Designation</th>
+        <th>About</th>
+        <th>Delete</th>
+        <th>Edit</th>
+      </tr>
+      </thead>
+
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+
+
+
+<script type="text/javascript"  src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.js"></script>
+<script>
+    $(document ).ready(function() {
+      
+        //the below Statements is required for registering dataTable and keep in mind the case sensitivity
+        var selectedId,id,clickedRowId;
+        var datatable = $("#registerTable").DataTable({
+            'fnCreatedRow': function (nRow, aData, iDataIndex) {
+                $(nRow).attr('id',iDataIndex)
+            }
+        }),newDetails,id
+         
+     axios.get('/users/getUsers').then(function (response) {
+      
+            console.log(response.data)
+            newDetails = response.data
+            newDetails.forEach(function (op) {
+                console.log("_________________________________")
+                console.log(op)
+                console.log("_________________________________")
+                datatable.row.add([
+                    op.firstname,
+                    op.lastname,
+                    op.username,
+                    op.age,
+                    op.salary,
+                    op.designation,
+                    op.about,
+                    '<button type="button" class="btn btn-primary delete" id="'+op.id+'">Delete This Row</button>',
+                    '<button type="button" class="btn btn-primary update" id="'+op.id+'">update</button>'
+
+                ]).draw(false)
+                 newDetails.push(response.data)
+            })
+        })
+
+
+         $('#registerTable ').on( 'click', 'button.delete', function (row) {
+             var rowId = row.target.id;
+             id = parseInt(rowId.split('_')[0]);
+             console.log(id);
+//             swal({
+//                 title: "Delete User",
+//                 text: "You won't be able to revert this!",
+//                 type: "info",
+//                 showCancelButton: true,
+//                 closeOnConfirm: false,
+//                 showLoaderOnConfirm: true,
+//             })
+             axios.post('/users/deleteUser1',{id:id}).then(function (response) {
+
+                 if(response.data !='ERROR'){
+                     $('#registerTable').dataTable().fnDeleteRow( clickedRowId, null, true);
+                     setTimeout(function () {
+                         swal('Deleted!',
+                             'Notification has been deleted.',
+                             'success');
+                     }, 2000);
+                     delete newDetails[id];
+                     console.log(newDetails)
+                 }
+                 else{
+                     swal("Sorry","Unable to remove the Notification.Please contact administrator", "error");
+                 }
+             });
+         })
+
+
+      $('#registerTable tbody').on('click', 'tr', function () {
+            clickedRowId = datatable.row(this).index();
+
+            $('#registerTable').on('click', 'button.update', function(row) {
+                var rowId = row.target.id;
+                selectedId = parseInt(rowId.split('_')[0]);
+                console.log(selectedId)
+                for (var i = 0; i < newDetails.length; i++){
+                    if (newDetails[i].id === selectedId) {
+                        selectedData = newDetails[i];
+                        break;
+                    }
+                }
+                $("#updatefirstName").val(selectedData.firstname);
+                $("#updatelastName").val(selectedData.lastname);
+                $('#updateModal').modal('show');
+            });
+
+        });
+        $("#updateUser").click(function (e) {
+            var updatedDetails = {
+                firstname : $("#updatefirstName").val(),
+                lastname : $("#updatelastName").val()
+            }
+            console.log(updatedDetails)
+            $("#updateUser").text("Updating User...")
+            axios.post('/users/updateUser',{updatedDetails:updatedDetails,id:selectedId}).then(function (response) {
+                console.log(response)
+                $('#updateModal').modal('hide');
+                $('#registerTable').dataTable().fnUpdate([(updatedDetails.firstname)], $("tr#" + clickedRowId)[0], 0);
+                $('#registerTable').dataTable().fnUpdate([(updatedDetails.lastname)], $("tr#" + clickedRowId)[0], 1);
+
+            })
+        })
+
+
+    })
+
+</script>
